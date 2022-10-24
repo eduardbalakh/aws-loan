@@ -58,6 +58,7 @@ public class LoanFunction implements HttpFunction {
                 httpResponse.setStatusCode(HttpURLConnection.HTTP_BAD_METHOD);
                 break;
         }
+
     }
 
     private Gson getGsonAdapter() {
