@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
 
@@ -24,8 +25,7 @@ public class LoanFunction implements HttpFunction {
 
     private static final String JSON_CONTENT_TYPE = "application/json";
 
-    // Before database access is not configured
-    List<LoanDO> list = new ArrayList<>();
+    private final LoanAggregatorService loanService = new LoanAggregatorService(new LocalDebugLoanProvider());
 
     @Override
     public void service(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
@@ -33,12 +33,32 @@ public class LoanFunction implements HttpFunction {
 
         String contentType = httpRequest.getContentType().orElse("");
         LOG.info("Content-Type is " + contentType);
+        LOG.info("Path is " + httpRequest.getPath());
+        if(!httpRequest.getPath().equals("/loan")){
+            httpResponse.setStatusCode(HttpURLConnection.HTTP_NOT_FOUND);
+            return;
+        }
 
         Gson gson = getGsonAdapter();
 
         switch (httpRequest.getMethod()) {
             case GET_METHOD:
-                writer.write(gson.toJson(list));
+                Map<String, List<String>> queryParams = httpRequest.getQueryParameters();
+                if(queryParams.containsKey("ownerId") &&
+                        !queryParams.containsKey("borrowerId")) {
+                    String ownerId = queryParams.get("ownerId").get(0);
+                    writer.write(gson.toJson(loanService.getLoansForOwner(ownerId)));
+                }
+                if(queryParams.containsKey("borrowerId") &&
+                        !queryParams.containsKey("ownerId")) {
+                    String borrowerId = httpRequest.getQueryParameters().get("borrowerId").get(0);
+                    writer.write(gson.toJson(loanService.getLoansForBorrower(borrowerId)));
+                }
+                if(queryParams.containsKey("borrowerId") && queryParams.containsKey("ownerId")) {
+                    String borrowerId = queryParams.get("borrowerId").get(0);
+                    String ownerId = queryParams.get("ownerId").get(0);
+                    writer.write(gson.toJson(loanService.getLoansForOwnerAndBorrower(ownerId, borrowerId)));
+                }
                 httpResponse.setStatusCode(HttpURLConnection.HTTP_OK);
                 break;
             case POST_FUNCTION:
@@ -48,16 +68,18 @@ public class LoanFunction implements HttpFunction {
                     break;
                 }
                 LoanDO loanDO = gson.fromJson(httpRequest.getReader(), LoanDO.class);
-                if (loanDO.getId().isEmpty()) {
+                if (loanDO.getId() == null || loanDO.getId().isEmpty()) {
                     loanDO.setId(UUID.randomUUID().toString());
                 }
-                list.add(loanDO);
+                loanDO.setDateTime(LocalDateTime.now());
+                loanService.saveLoan(loanDO);
                 httpResponse.setStatusCode(HttpURLConnection.HTTP_CREATED);
                 break;
             default:
                 httpResponse.setStatusCode(HttpURLConnection.HTTP_BAD_METHOD);
                 break;
         }
+        httpResponse.setContentType(JSON_CONTENT_TYPE);
 
     }
 

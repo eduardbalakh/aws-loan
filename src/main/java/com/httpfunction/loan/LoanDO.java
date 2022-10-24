@@ -54,7 +54,7 @@ public class LoanDO {
     }
 
     public void setDateTime(LocalDateTime dateTime) {
-        this.dateTime = dateTime;
+        this.dateTime = LocalDateTime.now();
     }
 
     public String getDescription() {
