@@ -1,11 +1,8 @@
 package com.httpfunction.loan;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class LoanAggregatorService {
@@ -40,6 +37,20 @@ public class LoanAggregatorService {
 
     public List<AggregatedLoanDO> getAggregatedLoadForOwner(String ownerId) {
         return getAggregatedLoanList(loanDataProvider.getLoansByOwnerId(ownerId));
+    }
+
+    public AggregatedLoanDO getAggregatedLoanForOwnerAndBorrower(String ownerId, String borrowerId) {
+        AggregatedLoanDO aggregate = new AggregatedLoanDO();
+        aggregate.setBorrowerId(borrowerId);
+        aggregate.setOwnerId(ownerId);
+        List<LoanDO> loans = getAllLoansForOwnerAndBorrower(ownerId, borrowerId);
+        BigDecimal sum = loans.stream()
+                .map(LoanDO::getValue)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        aggregate.setValue(sum);
+        aggregate.setStartDate(loans.stream().map(LoanDO::getDateTime).min(Comparator.naturalOrder()).orElse(null));
+        aggregate.setEndDate(loans.stream().map(LoanDO::getDateTime).max(Comparator.naturalOrder()).orElse(null));
+        return aggregate;
     }
 
     private List<AggregatedLoanDO> getAggregatedLoanList(List<LoanDO> listOfLoans) {

@@ -9,7 +9,6 @@ import java.io.BufferedWriter;
 import java.net.HttpURLConnection;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -47,17 +46,29 @@ public class LoanFunction implements HttpFunction {
                 if(queryParams.containsKey("ownerId") &&
                         !queryParams.containsKey("borrowerId")) {
                     String ownerId = queryParams.get("ownerId").get(0);
-                    writer.write(gson.toJson(loanService.getLoansForOwner(ownerId)));
+                    if(httpRequest.getPath().contains("aggregate")) {
+                        writer.write(gson.toJson(loanService.getAggregatedLoadForOwner(ownerId)));
+                    } else {
+                        writer.write(gson.toJson(loanService.getAllLoansForOwner(ownerId)));
+                    }
                 }
                 if(queryParams.containsKey("borrowerId") &&
                         !queryParams.containsKey("ownerId")) {
                     String borrowerId = httpRequest.getQueryParameters().get("borrowerId").get(0);
-                    writer.write(gson.toJson(loanService.getLoansForBorrower(borrowerId)));
+                    if(httpRequest.getPath().contains("aggregate")) {
+                        writer.write(gson.toJson(loanService.getAggregatedLoanForBorrower(borrowerId)));
+                    } else {
+                        writer.write(gson.toJson(loanService.getAllLoansForBorrower(borrowerId)));
+                    }
                 }
                 if(queryParams.containsKey("borrowerId") && queryParams.containsKey("ownerId")) {
                     String borrowerId = queryParams.get("borrowerId").get(0);
                     String ownerId = queryParams.get("ownerId").get(0);
-                    writer.write(gson.toJson(loanService.getLoansForOwnerAndBorrower(ownerId, borrowerId)));
+                    if(httpRequest.getPath().contains("aggregate")) {
+                        writer.write(gson.toJson(loanService.getAggregatedLoanForOwnerAndBorrower(ownerId, borrowerId)));
+                    } else {
+                        writer.write(gson.toJson(loanService.getAllLoansForOwnerAndBorrower(ownerId, borrowerId)));
+                    }
                 }
                 httpResponse.setStatusCode(HttpURLConnection.HTTP_OK);
                 break;
