@@ -20,7 +20,7 @@ public class LoanFunction implements HttpFunction {
 
     private static final String GET_METHOD = "GET";
 
-    private static final String POST_FUNCTION = "POST";
+    private static final String POST_METHOD = "POST";
 
     private static final String JSON_CONTENT_TYPE = "application/json";
 
@@ -72,7 +72,7 @@ public class LoanFunction implements HttpFunction {
                 }
                 httpResponse.setStatusCode(HttpURLConnection.HTTP_OK);
                 break;
-            case POST_FUNCTION:
+            case POST_METHOD:
                 if (!contentType.equals(JSON_CONTENT_TYPE)) {
                     writer.write("INVALID OR MISSING CONTENT TYPE HEADER");
                     httpResponse.setStatusCode(HttpURLConnection.HTTP_UNSUPPORTED_TYPE);
